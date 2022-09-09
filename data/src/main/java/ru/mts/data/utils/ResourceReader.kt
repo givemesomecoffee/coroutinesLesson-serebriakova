@@ -10,4 +10,5 @@ object ResourcesReader {
             ?: throw FileNotFoundException("File [$path] not found.")
         return inputStream.bufferedReader().readText()
     }
+    
 }

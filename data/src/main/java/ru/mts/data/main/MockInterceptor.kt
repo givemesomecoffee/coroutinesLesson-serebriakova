@@ -5,14 +5,10 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.Protocol
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.asResponseBody
-import okhttp3.ResponseBody.Companion.toResponseBody
 import okhttp3.mockwebserver.MockResponse
 import ru.mts.data.utils.ResourcesReader
-import java.io.File
-import java.io.FileNotFoundException
-import java.net.URL
 
-class MockInterceptor : Interceptor {
+internal class MockInterceptor : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val uri = chain.request().url.toUri().toString()
@@ -24,8 +20,7 @@ class MockInterceptor : Interceptor {
                 }
 
             ).getBody()
-            ?.asResponseBody("application/json".toMediaTypeOrNull())
-
+                ?.asResponseBody("application/json".toMediaTypeOrNull())
         return chain.proceed(chain.request())
             .newBuilder()
             .code(200)
@@ -36,11 +31,10 @@ class MockInterceptor : Interceptor {
             .addHeader("content-type", "application/json")
             .build()
     }
-}
 
-fun MockResponse.setBodyFromFile(filName: String): MockResponse {
-    val text = ResourcesReader.readText(filName)
-    setBody(text)
-    return this
+    private fun MockResponse.setBodyFromFile(filName: String): MockResponse {
+        val text = ResourcesReader.readText(filName)
+        setBody(text)
+        return this
+    }
 }
-

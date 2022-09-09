@@ -8,15 +8,9 @@ interface NewsDao {
     @Query("SELECT * FROM news")
     fun getAll(): List<NewsEntity?>?
 
-    @Query("SELECT * FROM news WHERE id = :id")
-    fun getById(id: Long): NewsEntity?
-
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(news: NewsEntity?)
 
-    @Update
-    fun update(news: NewsEntity?)
-
-    @Delete
-    fun delete(news: NewsEntity?)
+    @Query("DELETE FROM news")
+    fun clearDb()
 }

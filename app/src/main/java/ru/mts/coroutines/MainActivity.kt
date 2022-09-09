@@ -6,12 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import ru.ermolnik.news.NewsScreen
-import ru.ermolnik.news.NewsViewModel
+import ru.ermolnik.news.screen.NewsScreen
+import ru.ermolnik.news.screen.NewsViewModel
 import ru.mts.coroutines.ui.theme.CoroutinesTheme
 import ru.mts.data.news.db.NewsLocalDataSource
 import ru.mts.data.news.remote.NewsRemoteDataSource
@@ -22,7 +19,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CoroutinesTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
@@ -38,18 +34,5 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    CoroutinesTheme {
-        Greeting("Android")
     }
 }
