@@ -8,7 +8,10 @@ import ru.mts.data.news.db.NewsDao
 import ru.mts.data.news.db.NewsEntity
 
 
-@Database(entities = [NewsEntity::class], version = 1)
+@Database(
+    entities = [NewsEntity::class],
+    version = 2
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun newsDao(): NewsDao
 
@@ -22,7 +25,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "database"
-                ).build()
+                ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }
