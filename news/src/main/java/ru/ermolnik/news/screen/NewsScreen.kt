@@ -29,7 +29,7 @@ fun NewsScreen(viewModel: NewsViewModel) {
     Root(
         state = state.value,
         onRefresh = {
-            viewModel.getNews(true)
+            viewModel.refreshNews()
         },
         onClearCache = {
             viewModel.deleteNewsFromCache()

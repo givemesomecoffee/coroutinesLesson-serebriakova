@@ -1,11 +1,11 @@
 package ru.ermolnik.news.screen
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import ru.ermolnik.news.model.NewsState
 import ru.mts.data.news.repository.NewsRepository
 import ru.mts.data.utils.doOnError
@@ -13,70 +13,57 @@ import ru.mts.data.utils.doOnSuccess
 import ru.mts.data.utils.isNetworkException
 
 class NewsViewModel(private val repository: NewsRepository) : ViewModel() {
-    private val _state: MutableStateFlow<NewsState> = MutableStateFlow(NewsState())
+    private val _state: MutableStateFlow<NewsState> = MutableStateFlow(NewsState(loading = true))
     val state = _state.asStateFlow()
 
     private var currentJob: Job? = null
 
     init {
-        getNews()
+        viewModelScope.launch {
+            repository.getNews().collect {
+                it.doOnSuccess { news -> _state.emit(NewsState(data = news)) }
+                    .doOnError { _state.emit(NewsState(error = true)) }
+            }
+        }
     }
 
-
-    fun getNews(forceRefresh: Boolean = false) {
+    fun refreshNews() {
         viewModelScope.launch {
-            launchSingleJob(
-                launch {
-                    val previousSuccessResult = _state.value.data
-                         _state.emit(NewsState(loading = true, data = previousSuccessResult))
-
-                    repository.getNews(forceRefresh).collect {
-                        it.doOnError { error ->
-                            _state.emit(
-                                NewsState(
-                                    data = previousSuccessResult,
-                                    error = true,
-                                    isNetworkError = error.isNetworkException()
-                                )
-                            )
-                        }.doOnSuccess { news ->
-                            _state.emit(NewsState(data = news))
-                        }
-                    }
+            val cachedNews = state.value.data
+            val job = launch {
+                _state.emit(NewsState(loading = true, data = cachedNews))
+                repository.refreshNews().doOnError {
+                    _state.emit(
+                        NewsState(
+                            error = true,
+                            isNetworkError = it.isNetworkException(),
+                            data = state.value.data
+                        )
+                    )
                 }
-            )
+            }
+            currentJob = job
+            job.join()
+            if (currentJob == job) currentJob = null
         }
     }
 
     fun deleteNewsFromCache() {
         viewModelScope.launch {
-            launchSingleJob(
-                launch {
-                    _state.emit(NewsState(loading = true))
-                    repository.clearCache().apply {
-                        doOnSuccess { _state.emit(NewsState(loading = false)) }
-                        doOnError {
-                            _state.emit(
-                                NewsState(
-                                    error = true
-                                )
-                            )
-                        }
-                    }
-                }
-            )
-        }
-    }
-
-    private suspend fun launchSingleJob(newJob: Job) {
-        withContext(Dispatchers.Default) {
             currentJob?.cancel()
-            currentJob = newJob
-            newJob.join()
-           if (currentJob?.isCompleted == true) {
-               currentJob = null
-           }
+            currentJob = null
+            val cachedNews = state.value.data
+            _state.emit(NewsState(loading = true, data = cachedNews))
+            repository.clearCache()
+                .doOnSuccess { _state.emit(NewsState(loading = false)) }
+                .doOnError {
+                    _state.emit(
+                        NewsState(
+                            error = true,
+                            data = state.value.data
+                        )
+                    )
+                }
         }
     }
-
 }

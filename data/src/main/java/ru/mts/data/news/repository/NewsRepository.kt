@@ -14,31 +14,20 @@ class NewsRepository(
     private val newsRemoteDataSource: NewsRemoteDataSource
 ) {
 
-    suspend fun getNews(forceRefresh: Boolean = false): Flow<Result<List<News>, Throwable>> {
+    suspend fun getNews(): Flow<Result<List<News>, Throwable>> {
         return flow {
-            val newsResult = if (forceRefresh) {
+            if (newsLocalDataSource.isEmpty()) {
                 refreshNews()
-            } else {
-                getNewsFromCache()
             }
-            this.emit(newsResult)
-        }
-    }
-
-    private suspend fun getNewsFromCache(): Result<List<News>, Throwable> {
-        return newsLocalDataSource.getNews().mapNestedSuccess { news ->
-            if (news.isEmpty()) {
-                refreshNews()
-            } else {
-                Result.Success(news.mapBy { toDomain() })
+            newsLocalDataSource.getNews().collect { result ->
+                this.emit(result.mapSuccess { news -> news.mapBy { toDomain() } })
             }
         }
     }
 
-    private suspend fun refreshNews(): Result<List<News>, Throwable> {
+    suspend fun refreshNews(): VoidResult<Throwable> {
         return newsRemoteDataSource.getNews().mapSuccess { news ->
             newsLocalDataSource.setNews(news.mapBy { toEntity() })
-            news.mapBy { toDomain() }
         }
     }
 
